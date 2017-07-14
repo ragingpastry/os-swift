@@ -1,0 +1,41 @@
+---
+- name: Create swift configuration file
+  template:
+    src: swift.conf.j2
+    dest: /etc/swift/swift.conf
+
+- name: Ensure file permissions are correct
+  file:
+    dest: /etc/swift
+    owner: root
+    group: swift
+
+- name: Start controller services
+  service:
+    name: "{{ item }}"
+    state: running
+    enabled: True
+  when: "'swift_server' in group_names"
+  with_items:
+    - openstack-swift-proxy.service
+
+- name: Start storage services
+  service:
+    name: "{{ item }}"
+    state: running
+    enabled: True
+  when: "'swift_storage_node' in group_names"
+  with_items:
+    - openstack-swift-account.service
+    - openstack-swift-account-auditor.service
+    - openstack-swift-account-reaper.service
+    - openstack-swift-account-replicator.service
+    - openstack-swift-container.service
+    - openstack-swift-container-auditor.service
+    - openstack-swift-container-replicator.service
+    - openstack-swift-container-updater.service
+    - openstack-swift-object.service
+    - openstack-swift-object-auditor.service
+    - openstack-swift-object-replicator.service
+    - openstack-swift-object-updater.service
+    - rsyncd

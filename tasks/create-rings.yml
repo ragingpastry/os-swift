@@ -1,0 +1,75 @@
+---
+- name: Check if ring files exist
+  shell: |
+    "ls /etc/swift/{{ item }}.ring.gz"
+  register: swift_rings
+  changed_when: False
+  failed_when: False
+  with_items:
+    - account
+    - container
+    - object
+
+- name: Create fact for ring creation
+  run_once: True
+  set_fact:
+  args:
+    ring_facts: "{{ ring_facts|default([]) + [ {'host': hostvars[item]['inventory_hostname'], 'ip': hostvars[item]['ansible_%s' | format(hostvars[item]['management_interface'])].ipv4.address, 'swift_drives': hostvars[item]['swift_drives']}] }}" 
+  with_items: "{{ groups['swift_storage_node'] }}"
+  delegate_to: "{{ groups.swift_server[0] }}"
+
+- name: Create builder files
+  shell: |
+    cd /etc/swift
+    swift-ring-builder {{ item.1 }}.builder create 10 3 1
+  when: "swift_rings.results.{{ item.0 }}.rc != 2 or overwrite_ring_files == True"
+  delegate_to: "{{ groups.swift_server[0] }}"
+  with_indexed_items:
+    - account
+    - container
+    - object
+
+- name: Add storage nodes to the account ring
+  run_once: True
+  shell: |
+    cd /etc/swift
+    swift-ring-builder account.builder add --region 1 --zone {{ hostvars[item.0.host]['zone'] }} \ 
+    --ip {{ item.0.ip }} --port 6202 --device {{ item.1 | basename }} --weight 100
+  with_subelements:
+    - "{{ ring_facts }}"
+    - swift_drives
+  delegate_to: "{{ groups.swift_server[0] }}"
+
+- name: Add storage nodes to the container ring
+  run_once: True
+  shell: |
+    cd /etc/swift
+    swift-ring-builder container.builder add --region 1 --zone {{ hostvars[item.0.host]['zone'] }} \ 
+    --ip {{ item.0.ip }} --port 6201 --device {{ item.1 | basename }} --weight 100
+  with_subelements:
+    - "{{ ring_facts }}"
+    - swift_drives
+  delegate_to: "{{ groups.swift_server[0] }}"
+
+- name: Add storage nodes to the object ring
+  run_once: True
+  shell: |
+    cd /etc/swift
+    swift-ring-builder object.builder add --region 1 --zone {{ hostvars[item.0.host]['zone'] }} \ 
+    --ip {{ item.0.ip }} --port 6200 --device {{ item.1 | basename }} --weight 100
+  with_subelements:                           
+    - "{{ ring_facts }}"
+    - swift_drives
+  delegate_to: "{{ groups.swift_server[0] }}"
+
+- name: Rebalance the rings
+  run_once: True
+  shell: |
+    cd /etc/swift
+    swift-ring-builder {{ item }}.builder rebalance
+  delegate_to: "{{ groups.swift_server[0] }}"
+  with_items:
+    - account
+    - container
+    - object
+

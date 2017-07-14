@@ -1,0 +1,6 @@
+---
+# handlers file for os-swift-node
+- name: restart rsyncd
+  service:
+    name: rsyncd
+    state: restarted

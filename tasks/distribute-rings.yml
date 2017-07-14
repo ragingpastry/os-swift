@@ -1,0 +1,25 @@
+---
+- name: Gather ring content
+  slurp:
+    src: "/etc/swift/{{ item }}.ring.gz"
+  register: swift_rings
+  delegate_to: "{{ groups.swift_server[0] }}"
+  with_items:
+    - account
+    - container
+    - object
+
+- name: Distrbute ring files | workaround for 13794 
+  copy:
+    dest: "/tmp/{{ item.item }}"
+    content: "{{ item.content }}"
+    owner: swift
+    group: swift
+    mode: 0640
+  register: ring_changed
+  with_items: "{{ swift_rings.results }}"
+
+- name: Distribute ring files | workaround for 13794
+  shell: "/usr/bin/base64 -d /tmp/{{ item.item }} > {{ item.source }}"
+  when: ring_changed.changed
+  with_items: "{{ swift_rings.results }}"

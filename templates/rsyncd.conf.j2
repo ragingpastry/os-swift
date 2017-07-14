@@ -1,0 +1,23 @@
+uid = swift
+gid = swift
+log file = /var/log/rsyncd.log
+pid file = /var/run/rsyncd.pid
+address = {{ hostvars[inventory_hostname]['ansible_%s' | format(hostvars[inventory_hostname]['management_interface'])].ipv4.address }}   
+
+[account]
+max connections = 2
+path = {{ swift_srv_path }}
+read only = False
+lock file = /var/lock/account.lock
+
+[container]
+max connections = 4
+path = {{ swift_srv_path }}
+read only = False
+lock file = /var/lock/container.lock
+
+[object]
+max connections = 8
+path = {{ swift_srv_path }}
+read only = False
+lock file = /var/lock/object.lock

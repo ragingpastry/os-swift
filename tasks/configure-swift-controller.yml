@@ -1,0 +1,76 @@
+---
+- name: Drop admin-rc file
+  template:
+    src: admin-openrc.j2
+    dest: /root/admin-openrc
+
+- name: Create proxy-server configuration file
+  template:
+    src: proxy-server.conf.j2
+    dest: /etc/swift/proxy-server.conf
+
+- name: Create swift user
+  run_once: True
+  shell: |
+    source /root/admin-openrc
+    openstack user create --domain default --password {{ swift_password }} swift && \
+    touch /tmp/swift-task1
+  register: swift_user
+  failed_when: "swift_user.rc != 0 and 'Conflict occurred attempting to store user' not in swift_user.stderr"
+  args:
+    creates: /tmp/swift-task1
+
+- name: Add the admin role to swift user
+  run_once: True
+  shell: |
+    source /root/admin-openrc
+    openstack role add --project service --user swift admin
+    touch /tmp/swift-task2
+  register: swift_admin_role
+  failed_when: "swift_admin_role.rc != 0 and 'Conflict occurred attempting to store role' not in swift_admin_role.stderr"
+  args:
+    creates: /tmp/swift-task2
+
+- name: Create swift service
+  run_once: True
+  shell: | 
+    source /root/admin-openrc
+    openstack service create --name swift --description "Openstack Object Storage" object-store
+    touch /tmp/swift-task3
+  register: swift_service
+  failed_when: "swift_service.rc != 0 and 'Conflict occurred attempting to store service' not in swift_service.stderr"
+  args:
+    creates: /tmp/swift-task3
+
+- name: Create swift public endpoint
+  run_once: True
+  shell: |
+    source /root/admin-openrc
+    openstack endpoint create --region RegionOne object-store public {{ swift_public_endpoint }}
+    touch /tmp/swift-task4
+  register: swift_public_endpoint
+  failed_when: "swift_public_endpoint.rc != 0 and 'Multiple service matches found' not in swift_public_endpoint.stderr"
+  args:
+    creates: /tmp/swift-task4
+
+- name: Create swift internal endpoint
+  run_once: True
+  shell: |
+    source /root/admin-openrc
+    openstack endpoint create --region RegionOne object-store internal {{ swift_internal_endpoint }}
+    touch /tmp/swift-task5
+  register: swift_internal_endpoint
+  failed_when: "swift_internal_endpoint.rc != 0 and 'Multiple service matches found' not in swift_internal_endpoint.stderr"
+  args:
+    creates: /tmp/swift-task5
+
+- name: Create swift admin endpoint
+  run_once: True
+  shell: |
+    source /root/admin-openrc
+    openstack endpoint create --region RegionOne object-store admin {{ swift_admin_endpoint }}
+    touch /tmp/swift-task6
+  register: swift_admin_endpoint
+  failed_when: "swift_admin_endpoint.rc != 0 and 'Multiple service matches found' not in swift_admin_endpoint.stderr"
+  args:
+    creates: /tmp/swift-task6

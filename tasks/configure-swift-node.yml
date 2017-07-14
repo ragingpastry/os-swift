@@ -1,0 +1,32 @@
+---
+- name: Create rsyncd configuration file
+  template:
+    src: rsyncd.conf.j2
+    dest: /etc/rsyncd.conf
+  notify: 
+    - restart rsyncd
+
+- name: Create swift account-server configuration file
+  template:
+    src: account-server.conf.j2
+    dest: /etc/swift/account-server.conf
+
+- name: Create swift container-server configuration file
+  template:
+    src: container-server.conf.j2
+    dest: /etc/swift/container-server.conf
+
+- name: Create swift object-server configuration file
+  template:
+    src: object-server.conf.j2
+    dest: /etc/swift/object-server.conf
+
+- name: Ensure recon directory exists
+  file:
+    path: "{{ recon_directory }}"
+    state: directory
+    owner: root
+    group: swift
+    mode: "775"
+
+

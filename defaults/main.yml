@@ -1,0 +1,23 @@
+---
+mount_options: "noatime,nodiratime,nobarrier,logbufs=8"
+recon_directory: "/var/cache/swift"
+format_devices: False
+keystone_url: controller
+swift_password: test
+keystone_admin_password: test
+swift_srv_path: "/srv/node/"
+
+swift_admin_endpoint: |-
+  "http://{{ keystone_url }}:8080/v1"
+swift_internal_endpoint: |-
+  "http://{{ keystone_url }}:8080/v1/AUTH_%\(tenant_id\)s"
+swift_public_endpoint: |-
+  "http://{{ keystone_url }}:8080/v1/AUTH_%\(tenant_id\)s"
+
+overwrite_ring_files: False
+
+swift_hash_path_prefix: changeme
+swift_hash_path_suffix: changeme
+
+# exclude_drives: 
+#   - /dev/sda

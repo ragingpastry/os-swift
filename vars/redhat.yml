@@ -1,0 +1,13 @@
+yum_node_packages:
+  - rsync
+  - openstack-swift-account
+  - openstack-swift-container
+  - openstack-swift-object
+  - xfsprogs
+
+yum_controller_packages:
+  - openstack-swift-proxy
+  - python-swiftclient
+  - python-keystoneclient
+  - python-keystonemiddleware
+  - memcached

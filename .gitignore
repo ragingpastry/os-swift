@@ -1,0 +1,12 @@
+.cache/
+.molecule/
+.tox/
+tests/.cache
+**/tests/__pycache__/
+playbook.retry
+[._]*.s[a-w][a-z]
+[._]s[a-w][a-z]
+*.un~
+Session.vim
+.netrwhist
+*~

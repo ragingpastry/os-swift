@@ -1,0 +1,43 @@
+---
+- name: Gather list of physical drives
+  shell: |
+   fdisk -l 2>/dev/null | grep "Disk \/" | \
+   grep -v "\/dev\/md" | grep -v "/\dev/\mapper" | \
+   awk '{print $2}' | sed -e 's/://g' 
+  register: physical_devices
+  changed_when: False
+
+- name: Set swift_drives fact
+  set_fact:
+    swift_drives: "{{ physical_devices.stdout_lines | difference(exclude_drives) }}"
+
+- name: Unmount devices
+  shell: "umount {{ item }} || true"
+  with_items: "{{ swift_drives }}"
+  changed_when: False
+  when: format_devices == True
+
+# here be danger
+- name: Format physical devices (except excludes)
+  shell: "/usr/sbin/mkfs -t xfs -f {{ item }}"
+  with_items: "{{ swift_drives }}"
+  when: format_devices == True
+
+- name: Ensure mountpoints exist
+  file:
+    path: "{{ swift_srv_path }}/{{ item | basename }}"
+    state: directory
+    owner: swift
+    group: swift
+  with_items: "{{ swift_drives }}"
+
+- name: Add mountpoints to fstab
+  mount:
+    path: "{{ swift_srv_path }}/{{ item | basename }}"
+    src: "{{ item }}"
+    fstype: xfs
+    opts: "{{ mount_options }}"
+    state: mounted
+  with_items: "{{ swift_drives }}"
+    
+

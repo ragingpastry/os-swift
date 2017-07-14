@@ -1,0 +1,17 @@
+---
+- include: install-packages.yml
+
+- include: configure-devices.yml
+  when: "'swift_storage_node' in group_names"
+
+- include: configure-swift-node.yml
+  when: "'swift_storage_node' in group_names"
+
+- include: configure-swift-controller.yml
+  when: "'swift_server' in group_names"
+
+- include: create-rings.yml
+
+- include: distribute-rings.yml
+
+- include: finalize-installation.yml
